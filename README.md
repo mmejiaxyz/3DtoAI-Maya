@@ -4,11 +4,23 @@ Autodesk Maya 2026 plugin that sends the active viewport to a local
 ComfyUI server running FLUX.2 Klein 9B Distilled, and displays the
 generated image in a docked panel.
 
+![Shoot — viewport-to-still example: a stylized stone character in a mossy forest](docs/screenshots/hero-forest.png)
+
 - **Maya:** 2026 (PySide6, Python 3.11)
 - **Backend:** ComfyUI (local, HTTP on `127.0.0.1:8188`)
 - **Model:** FLUX.2 Klein 9B Distilled FP8 + Qwen 3 8B text encoder
 - **Platform:** Windows 11, CUDA. Tested on a 12 GB GPU.
 - **Docs:** https://mmejiaxyz.github.io/3DtoAI-Maya/
+
+---
+
+## Example
+
+The viewport snap on the left, the generated still on the right. The
+plugin uses the snap as a reference and the prompt to describe the new
+environment; the character's silhouette and material are preserved.
+
+![Maya viewport on the left, FLUX.2 Klein render on the right](docs/screenshots/viewport-to-render.jpg)
 
 ---
 
@@ -99,6 +111,16 @@ and paste a read-scoped HF access token into the **HF Token** field.
 7. Click **Generate**. Klein runs in 4 sampling steps at `cfg=1`; on a
    12 GB card, expect ~40 s end-to-end.
 8. **Save Result** writes the PNG to disk.
+
+### The panel
+
+Three tabs — **Shoot**, **Models**, and **Log**. Strictly monochromatic,
+monospaced, hairline-ruled.
+
+| Shoot | Models | Log |
+|:-----:|:------:|:---:|
+| ![Shoot tab](docs/screenshots/panel-shoot.png) | ![Models tab](docs/screenshots/panel-models.png) | ![Log tab](docs/screenshots/panel-log.png) |
+| Prompt, aspect, seed, snap, generate. | Configure ComfyUI path and HF token, download the three FLUX.2 weights. | Live tail of `%TEMP%\shoot_comfy_<port>.log` — ComfyUI's stdout and stderr as it runs. |
 
 ### Kill Server
 
