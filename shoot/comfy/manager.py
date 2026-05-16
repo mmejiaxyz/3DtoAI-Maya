@@ -101,6 +101,15 @@ class ComfyManager:
         self.port = port
         self._proc: Optional[subprocess.Popen] = None
         self._pid_file = Path(tempfile.gettempdir()) / f"shoot_comfy_{port}.pid"
+        # ComfyUI prints a lot during startup (model scanning, VRAM load).
+        # If stdout/stderr are PIPE and nothing reads them, the OS pipe
+        # buffer (~64 KB on Windows) fills, the child blocks on write,
+        # and the HTTP server never starts — `is_running()` then stays
+        # False forever. Redirect to a log file instead.
+        self._log_path = (
+            Path(tempfile.gettempdir()) / f"shoot_comfy_{port}.log"
+        )
+        self._log_file = None  # type: Optional[object]
 
     # ------------------------------------------------------------------
     # Status
@@ -144,29 +153,54 @@ class ComfyManager:
             "--preview-method", "none",
         ]
 
+        # Truncate / re-open the log file each start.
+        self._log_file = open(self._log_path, "wb", buffering=0)
+
         kwargs: dict = {
             "cwd": str(self.install_dir),
-            "stdout": subprocess.PIPE,
-            "stderr": subprocess.PIPE,
+            "stdout": self._log_file,
+            "stderr": subprocess.STDOUT,
+            "stdin":  subprocess.DEVNULL,
         }
 
-        # Hide console window on Windows
         if platform.system() == "Windows":
             si = subprocess.STARTUPINFO()
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             si.wShowWindow = subprocess.SW_HIDE
             kwargs["startupinfo"] = si
+            # DETACHED_PROCESS so killing Maya doesn't take the server with it
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
 
         self._proc = subprocess.Popen(cmd, **kwargs)
         self._pid_file.write_text(str(self._proc.pid))
 
+    def log_path(self) -> Path:
+        """Return the log file path so the panel can offer 'open log' on errors."""
+        return self._log_path
+
+    def _tail_log(self, max_bytes: int = 4096) -> str:
+        try:
+            if not self._log_path.exists():
+                return ""
+            size = self._log_path.stat().st_size
+            with open(self._log_path, "rb") as f:
+                if size > max_bytes:
+                    f.seek(-max_bytes, 2)
+                return f.read().decode("utf-8", errors="replace")
+        except Exception:
+            return ""
+
     def start_and_wait(
         self,
-        timeout: float = 90.0,
+        timeout: float = 240.0,
         poll: float = 1.0,
         status_cb: Optional[Callable[[str], None]] = None,
     ) -> None:
-        """Start ComfyUI and block until the API responds or timeout expires."""
+        """Start ComfyUI and block until the API responds or timeout expires.
+
+        Default timeout is 4 minutes — cold-start with FLUX.2 models in VRAM
+        takes ~60-120s on a 12 GB card after model scanning.
+        """
         self.start()
         deadline = time.time() + timeout
         start = time.time()
@@ -176,21 +210,20 @@ class ComfyManager:
                 return
             # Surface subprocess crash early
             if self._proc and self._proc.poll() is not None:
-                stderr = b""
-                if self._proc.stderr:
-                    stderr = self._proc.stderr.read(2000)
+                tail = self._tail_log()
                 raise RuntimeError(
-                    f"ComfyUI process exited with code {self._proc.returncode}.\n"
-                    + stderr.decode("utf-8", errors="replace")
+                    f"ComfyUI exited with code {self._proc.returncode}.\n"
+                    f"Log tail ({self._log_path}):\n{tail}"
                 )
             elapsed = int(time.time() - start)
             if status_cb:
-                status_cb(f"Starting ComfyUI… {elapsed}s (loading FLUX into VRAM)")
+                status_cb(f"Starting ComfyUI… {elapsed}s")
             time.sleep(poll)
 
+        tail = self._tail_log(2048)
         raise RuntimeError(
-            f"ComfyUI did not respond within {int(timeout)}s. "
-            "Check CUDA drivers and ComfyUI dependencies (see SETUP.md)."
+            f"ComfyUI did not respond on port {self.port} within {int(timeout)}s.\n"
+            f"Log: {self._log_path}\nTail:\n{tail}"
         )
 
     # ------------------------------------------------------------------
@@ -207,6 +240,7 @@ class ComfyManager:
                 self._proc.kill()
             self._pid_file.unlink(missing_ok=True)
             self._proc = None
+            self._close_log()
             return
 
         pid = self._read_saved_pid()
@@ -214,6 +248,15 @@ class ComfyManager:
             self._terminate_pid(pid)
             self._pid_file.unlink(missing_ok=True)
         self._proc = None
+        self._close_log()
+
+    def _close_log(self) -> None:
+        try:
+            if self._log_file is not None:
+                self._log_file.close()
+        except Exception:
+            pass
+        self._log_file = None
 
     def kill(self) -> bool:
         """Force-kill ComfyUI listening on self.port, regardless of who started it.

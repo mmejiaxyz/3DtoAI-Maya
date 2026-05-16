@@ -31,6 +31,7 @@ class ShotResult:
 def generate(
     req: ShotRequest,
     status_cb: Optional[Callable[[str], None]] = None,
+    cancelled: Optional[Callable[[], bool]] = None,
 ) -> ShotResult:
     client = _client()
     _assert_alive(client)
@@ -49,7 +50,11 @@ def generate(
     if status_cb:
         status_cb("Generating...")
     prompt_id = client.queue_prompt(workflow)
-    png = client.wait_for_image(prompt_id, status_cb=status_cb)
+    png = client.wait_for_image(
+        prompt_id,
+        status_cb=status_cb,
+        cancelled=cancelled,
+    )
     return ShotResult(png=png)
 
 

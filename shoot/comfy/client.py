@@ -83,13 +83,16 @@ class ComfyClient:
     # ------------------------------------------------------------------
 
     def _get_history(self, prompt_id: str) -> Optional[dict]:
-        try:
-            url = f"{self.base}/history/{urllib.parse.quote(prompt_id)}"
-            with urllib.request.urlopen(url, timeout=10) as resp:
-                data = json.loads(resp.read())
-            return data.get(prompt_id)
-        except Exception:
-            return None
+        """Return the history entry for *prompt_id*, or None if not present yet.
+
+        Raises on connection failure so callers can distinguish 'still pending'
+        from 'server is gone'. The previous catch-all swallowed disconnects,
+        which is why the generation timer ran forever after Kill Server.
+        """
+        url = f"{self.base}/history/{urllib.parse.quote(prompt_id)}"
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            data = json.loads(resp.read())
+        return data.get(prompt_id)
 
     def _fetch_image(self, filename: str, subfolder: str, folder_type: str) -> bytes:
         params = urllib.parse.urlencode(
@@ -102,15 +105,36 @@ class ComfyClient:
         self,
         prompt_id: str,
         poll_interval: float = 3.0,
-        timeout: float = 1800.0,   # 30 min — FLUX.2 on 12 GB VRAM can take 10-15 min
+        timeout: float = 1800.0,   # 30 min ceiling — FLUX.2 cold start
         status_cb: Optional[Callable[[str], None]] = None,
+        cancelled: Optional[Callable[[], bool]] = None,
     ) -> bytes:
-        """Block until the queued prompt finishes. Returns the first output image as PNG bytes."""
+        """Block until the queued prompt finishes.
+
+        Raises CancelledError-shaped RuntimeError if *cancelled* returns True,
+        or if the server stops responding for several consecutive polls.
+        """
         deadline = time.time() + timeout
         start = time.time()
+        consecutive_failures = 0
+        max_failures = 3  # ~9 seconds at 3s poll = server is gone, bail
 
         while time.time() < deadline:
-            entry = self._get_history(prompt_id)
+            if cancelled and cancelled():
+                raise RuntimeError("Cancelled.")
+
+            try:
+                entry = self._get_history(prompt_id)
+                consecutive_failures = 0
+            except Exception as exc:
+                consecutive_failures += 1
+                if consecutive_failures >= max_failures:
+                    raise RuntimeError(
+                        f"Lost connection to ComfyUI after {consecutive_failures} "
+                        f"polls ({exc.__class__.__name__}: {exc})."
+                    )
+                entry = None
+
             if entry:
                 status = entry.get("status", {})
                 if status.get("completed"):
@@ -122,7 +146,6 @@ class ComfyClient:
                                 img.get("type", "output"),
                             )
                     raise RuntimeError("Job completed but no images in output — check ComfyUI logs.")
-                # Report any execution error surfaced in status
                 if status.get("status_str") == "error":
                     msgs = [
                         m.get("details", "") or m.get("message", "")
