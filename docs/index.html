@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shoot — Manuel Mejia</title>
+  <meta name="description" content="Shoot — a Maya 2026 plugin by Manuel Mejia for turning the active viewport into a generated still via local FLUX.2 Klein inference.">
+  <link rel="icon" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header__left">
+      <span>MANUEL MEJIA</span>
+      <span class="header__role">&nbsp;— CREATIVE TECHNOLOGIST</span>
+    </div>
+    <nav class="header__nav">
+      <a href="#practice" aria-current="page">WORK</a>
+      <a href="#install">INSTALL</a>
+      <a href="#usage">USAGE</a>
+      <a href="#architecture">ARCHITECTURE</a>
+      <a href="https://github.com/Mejia37/3DtoAI-Maya">SOURCE</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero__label">ART &amp; TECHNOLOGY · 2026</div>
+    <h1 class="hero__title">Shoot</h1>
+    <p class="hero__synopsis">
+      A small Autodesk Maya 2026 plugin that turns the active 3D viewport
+      into a generated still — locally, in monochrome, without leaving the
+      scene. The plugin sits in the same window as the work and speaks to a
+      ComfyUI server running on the same machine, where FLUX.2 Klein 9B
+      Distilled performs the image-edit pass.
+    </p>
+  </section>
+
+  <section class="data-block">
+    <div class="data-block__inner">
+      <div class="data-row">
+        <div class="data-row__label">YEAR</div>
+        <div class="data-row__value">2026</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">FORMAT</div>
+        <div class="data-row__value">MAYA 2026 PLUGIN</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">RUNTIME</div>
+        <div class="data-row__value">MAYAPY · PYSIDE6 · COMFYUI</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">MODEL</div>
+        <div class="data-row__value">FLUX.2 KLEIN 9B FP8</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">PLATFORM</div>
+        <div class="data-row__value">WINDOWS · CUDA</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">LICENSE</div>
+        <div class="data-row__value">PRIVATE · BFL TERMS</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">AUTHOR</div>
+        <div class="data-row__value">MANUEL MEJIA</div>
+      </div>
+      <div class="data-row">
+        <div class="data-row__label">SOURCE</div>
+        <div class="data-row__value">
+          <a href="https://github.com/Mejia37/3DtoAI-Maya">HTTP:// GITHUB.COM/MEJIA37/3DTOAI-MAYA</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <article class="article">
+
+    <h2 id="practice">Practice</h2>
+    <p>
+      Manuel Mejia is a creative technologist and filmmaker whose work sits
+      at the intersection of collective identity, political memory, and the
+      technologies that mediate both. Shoot is a small instrument in that
+      practice — a way to keep the staging of an image inside the same room
+      where the image is made.
+    </p>
+    <p>
+      The plugin makes one small claim: that the 3D viewport, the prompt,
+      and the generated still belong on the same surface. Maya is where the
+      composition is decided; the model should not require a separate
+      window, a separate workflow, or an external API call to honour that
+      decision. The viewport is snapped, the prompt is written, the
+      ComfyUI server replies — all without leaving the scene.
+    </p>
+
+    <h2 id="install">Installation</h2>
+    <p>
+      Shoot is distributed as a Maya module. The bundle is a single folder
+      containing a <code>shoot.mod</code> file and a <code>shoot/</code>
+      Python package. There is no installer.
+    </p>
+
+    <h3>One — place the module</h3>
+    <p>
+      Clone the repository into a directory Maya scans for modules. The
+      default Windows path is below; substitute your username.
+    </p>
+<pre><code>git clone https://github.com/Mejia37/3DtoAI-Maya.git ^
+  "%USERPROFILE%\Documents\maya\2026\modules\shoot"</code></pre>
+
+    <h3>Two — install Python dependencies into mayapy</h3>
+    <p>
+      A HuggingFace client is required for the FLUX.2 weights download.
+      Maya ships its own Python (<code>mayapy.exe</code>); install into
+      that, not into the system Python.
+    </p>
+<pre><code>"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe" -m pip install ^
+  "huggingface_hub&gt;=0.20"</code></pre>
+
+    <h3>Three — install ComfyUI</h3>
+    <p>
+      Shoot does not bundle ComfyUI. Install it once, anywhere on the
+      machine. The default expected path is <code>%USERPROFILE%\ComfyUI</code>;
+      edit the path in the plugin's <span class="data-row__value">MODELS</span>
+      tab to point elsewhere.
+    </p>
+
+    <h3>Four — load the plugin</h3>
+    <p>
+      In Maya, open Plug-in Manager and load <code>plugin.py</code>. The
+      menu <em>Shoot</em> appears in the main menu bar; choose
+      <em>Open Shoot Panel</em>.
+    </p>
+
+    <h2 id="usage">Usage</h2>
+
+    <h3>Models</h3>
+    <p>
+      Open the <em>Models</em> tab and download the three files Shoot
+      requires. The UNet is gated; accepting the FLUX.2 Klein license on
+      huggingface.co and pasting a HuggingFace token into the panel is
+      required before that file can be retrieved. The text encoder and
+      VAE are public.
+    </p>
+    <ul>
+      <li><span class="data-row__value">UNET</span> — <code>flux-2-klein-9b-kv-fp8.safetensors</code>, approximately nine gigabytes.</li>
+      <li><span class="data-row__value">TEXT ENCODER</span> — <code>qwen_3_8b_fp8mixed.safetensors</code>, approximately eight gigabytes.</li>
+      <li><span class="data-row__value">VAE</span> — <code>full_encoder_small_decoder.safetensors</code>, approximately three hundred and thirty-five megabytes.</li>
+    </ul>
+
+    <h3>Generating a still</h3>
+    <p>
+      In the <em>Shoot</em> tab, start the ComfyUI server with the button
+      in the header. Frame the camera in the viewport. Press
+      <em>Snap Viewport</em>; the captured frame appears in the
+      <em>Viewport Snap</em> pane. Write a prompt in the field at the top
+      of the panel — third-person, archival, no marketing verbs — and
+      press <em>Generate</em>. Klein is a four-step distilled model; the
+      result returns in roughly forty seconds on a twelve-gigabyte card,
+      faster on more.
+    </p>
+
+    <h3>Killing the server</h3>
+    <p>
+      The red <em>Kill ComfyUI</em> button is always available when a
+      Comfy process is listening on the configured port — including
+      mid-generation, and including processes Shoot did not itself start.
+      The button falls back to a port-PID lookup when the manager has no
+      tracked subprocess, so a Comfy launched from a terminal earlier in
+      the day is still reachable.
+    </p>
+
+    <h2 id="architecture">Architecture</h2>
+    <p>
+      Shoot is intentionally small. There are five top-level modules,
+      none of which depend on a framework beyond Maya and the Python
+      standard library.
+    </p>
+
+    <ul>
+      <li><code>shoot/plugin.py</code> — Maya 2.0 API plugin shell. Registers the <code>shootOpen</code> command and a single menu item; defers the panel import until first invocation.</li>
+      <li><code>shoot/capture/viewport.py</code> — Reads the active <code>M3dView</code> back-buffer for the snapshot. Falls back to a one-frame playblast when the GPU readback is refused, which happens on some drivers.</li>
+      <li><code>shoot/comfy/</code> — A four-file ComfyUI client: <code>client.py</code> wraps the REST endpoints in <code>urllib</code> only; <code>manager.py</code> starts, stops, and kills the local server; <code>workflow.py</code> emits the FLUX.2 Klein workflow as a Python dict; <code>downloader.py</code> wraps <code>huggingface_hub</code> for gated weights.</li>
+      <li><code>shoot/inference/comfy.py</code> — A single function, <code>generate()</code>: upload the reference, queue the workflow, poll history, return the bytes.</li>
+      <li><code>shoot/ui/shoot_panel.py</code> — The PySide6 panel. Two tabs: <em>Shoot</em> and <em>Models</em>. A <code>QThreadPool</code> keeps the Maya main thread free; Maya commands that must run on the main thread (viewport capture, panel queries) are explicitly synchronous.</li>
+    </ul>
+
+    <h3>The FLUX.2 workflow</h3>
+    <p>
+      The workflow that Shoot emits matches the official
+      <em>Image Edit (Flux.2 Klein 9B Distilled)</em> subgraph published
+      by Black Forest Labs and Comfy-Org. Nineteen nodes, one reference
+      image, one prompt; <code>ConditioningZeroOut</code> for negative,
+      <code>cfg = 1</code>, four sampling steps, the Euler sampler. No
+      LoRAs. No multi-angle context. The single-image discipline is
+      deliberate.
+    </p>
+
+    <h3>What is intentionally absent</h3>
+    <p>
+      Earlier drafts of Shoot orbited temporary cameras around the scene
+      to give the model multiple reference angles, and ran an additional
+      pass to extract clean backgrounds for reuse across angles. Both
+      were removed. The orbit version produced inconsistent results and
+      added two buttons to a UI that should ask the user for one
+      decision at a time. The current shape — snap, prompt, generate —
+      is the one that survived.
+    </p>
+
+    <h2 id="design">Design</h2>
+    <p>
+      The plugin's surface follows the same rules as this page.
+      Monospaced, hairline-ruled, no rounded corners, no icons. The Maya
+      panel renders on an ink surface — paper text over near-black —
+      because Maya itself is dark by default and the system's opacity
+      ladder reads correctly inverted. The panel uses the same
+      <em>FG-1</em> through <em>FG-7</em> ladder as the documentation,
+      the same <code>0.06em</code> letter-spacing on uppercase labels,
+      the same <code>1px</code> rules between sections. There are no
+      drop-shadows, anywhere.
+    </p>
+
+    <h2 id="caveats">Caveats</h2>
+    <p>
+      FLUX.2 Klein is a distilled model released weeks before this
+      writing; the broader ecosystem of LoRAs and conditioning tools
+      has not yet caught up to it. Multi-angle consistency, in
+      particular, relies on prompting alone — there is no multi-angle
+      LoRA for FLUX.2 at the time of release. The model will arrive,
+      and Shoot will inherit it; the plugin's current shape does not
+      assume that arrival.
+    </p>
+    <p>
+      The plugin is tested on Windows 11, Maya 2026, an NVIDIA
+      twelve-gigabyte card. Other configurations are likely to work and
+      have not been verified.
+    </p>
+
+  </article>
+
+  <footer class="footer">
+    <span>© MANUEL MEJIA · 2026</span>
+    <span>SHOOT v0.1.0</span>
+  </footer>
+
+</body>
+</html>

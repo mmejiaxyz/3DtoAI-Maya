@@ -24,7 +24,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-MAYA_VERSION = "2026"
+MAYA_VERSION = "2027"
 REPO = Path(__file__).resolve().parent
 
 
@@ -54,7 +54,7 @@ def write_mod_file() -> Path:
     modules_dir = maya_user_dir() / "modules"
     modules_dir.mkdir(parents=True, exist_ok=True)
     mod = modules_dir / "shoot.mod"
-    contents = f"+ shoot 1.0 {REPO}\nscripts: {REPO}\n"
+    contents = f"+ shoot 1.0 {REPO}\nscripts: {REPO}\nplug-ins: {REPO / 'shoot'}\n"
     mod.write_text(contents)
     return mod
 
@@ -98,7 +98,7 @@ def main():
         install_deps()
     print()
     print("Done. Next steps:")
-    print("  1. Launch Maya 2026.")
+    print("  1. Launch Maya 2027.")
     print("  2. Window > Settings/Preferences > Plug-in Manager > load `plugin.py`.")
     print("  3. Or run in the script editor:")
     print("       import maya.cmds as cmds; cmds.loadPlugin('plugin.py'); cmds.shootOpen()")

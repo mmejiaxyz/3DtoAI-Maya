@@ -1,0 +1,349 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Shoot — Manuel Mejia
+   Adapted from the colors_and_type.css of the mmejia.xyz design system.
+   Monochromatic, monospaced, hairline-ruled. No icons, no shadows, no radii.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --paper:        #F3F1EE;
+  --ink:          #0C0E11;
+
+  --bg:           var(--paper);
+  --fg:           var(--ink);
+
+  --fg-1:         var(--fg);
+  --fg-2:         rgba(12, 14, 17, 0.85);
+  --fg-3:         rgba(12, 14, 17, 0.65);
+  --fg-4:         rgba(12, 14, 17, 0.50);
+  --fg-5:         rgba(12, 14, 17, 0.40);
+  --fg-6:         rgba(12, 14, 17, 0.35);
+  --fg-7:         rgba(12, 14, 17, 0.30);
+
+  --rule:         rgba(0, 0, 0, 0.10);
+  --rule-soft:    rgba(0, 0, 0, 0.07);
+
+  --font-mono:    ui-monospace, "SF Mono", "Menlo", "Consolas",
+                  "Courier New", Courier, monospace;
+
+  --t-micro:      7.5px;
+  --t-label:      9px;
+  --t-meta:       9.5px;
+  --t-base:       10.5px;
+  --t-body:       11px;
+  --t-body-mobile: 12px;
+
+  --ls-prose:     0.02em;
+  --ls-body:      0.03em;
+  --ls-title:     0.04em;
+  --ls-default:   0.06em;
+  --ls-label:     0.10em;
+  --ls-wide:      0.12em;
+
+  --lh-tight:     1.5;
+  --lh-snug:      1.65;
+  --lh-body:      1.70;
+  --lh-airy:      1.75;
+
+  --pad-x:        2.4rem;
+  --pad-y:        2.2rem;
+  --pad-x-mobile: 1.4rem;
+  --pad-y-mobile: 1.6rem;
+  --max-prose:    42%;
+  --max-about:    48rem;
+
+  --t-view:       0.28s ease;
+  --t-hover:      0.4s ease;
+  --t-fast:       0.3s ease;
+
+  --rest-link:    var(--fg-6);
+}
+
+@view-transition { navigation: auto; }
+@keyframes vt-fade-out { to   { opacity: 0; } }
+@keyframes vt-fade-in  { from { opacity: 0; } }
+::view-transition-old(root) { animation: var(--t-view) both vt-fade-out; }
+::view-transition-new(root) { animation: var(--t-view) both vt-fade-in;  }
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: var(--t-base);
+  line-height: var(--lh-body);
+  letter-spacing: var(--ls-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  opacity: 1;
+  transition: opacity var(--t-fast);
+}
+a:hover { opacity: var(--rest-link); }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2.6rem 0;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--pad-y) var(--pad-x);
+  border-bottom: 1px solid var(--rule);
+}
+
+.header__left,
+.header__nav {
+  font-family: var(--font-mono);
+  font-size: var(--t-base);
+  letter-spacing: var(--ls-default);
+  text-transform: uppercase;
+  line-height: var(--lh-airy);
+}
+
+.header__nav { display: flex; gap: 1.6rem; }
+.header__nav a { text-decoration: none; color: var(--rest-link); }
+.header__nav a:hover,
+.header__nav a[aria-current="page"] { color: var(--fg-1); opacity: 1; }
+
+.header__role { color: var(--fg-5); }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+.hero {
+  padding: 6rem var(--pad-x) 4rem;
+  max-width: var(--max-about);
+}
+
+.hero__label {
+  font-size: var(--t-micro);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--fg-5);
+  margin-bottom: 2rem;
+}
+
+.hero__title {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  font-weight: normal;
+  letter-spacing: var(--ls-title);
+  line-height: var(--lh-tight);
+  margin: 0 0 2rem 0;
+  text-transform: none;
+}
+
+.hero__synopsis {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  letter-spacing: var(--ls-body);
+  line-height: var(--lh-body);
+  color: var(--fg-2);
+  max-width: 38rem;
+}
+
+/* ── Article column ─────────────────────────────────────────────────────── */
+
+.article {
+  padding: 0 var(--pad-x) 10rem;
+  max-width: 48rem;
+}
+
+.article h2 {
+  font-family: var(--font-mono);
+  font-size: var(--t-base);
+  font-weight: normal;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-5);
+  margin: 4rem 0 1.4rem 0;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.article h3 {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  font-weight: normal;
+  letter-spacing: var(--ls-title);
+  margin: 2.4rem 0 0.7rem 0;
+  text-transform: none;
+}
+
+.article p {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  letter-spacing: var(--ls-body);
+  line-height: var(--lh-body);
+  color: var(--fg-2);
+  margin: 0 0 1.4rem 0;
+}
+
+.article ul, .article ol {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  letter-spacing: var(--ls-body);
+  line-height: var(--lh-body);
+  color: var(--fg-2);
+  padding-left: 1.4rem;
+  margin: 0 0 1.4rem 0;
+}
+
+.article li { margin: 0.35rem 0; }
+
+.article code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0;
+  background: transparent;
+  border: 1px solid var(--rule);
+  padding: 0.1rem 0.35rem;
+}
+
+.article pre {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 1.55;
+  background: transparent;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 1.2rem 1.4rem;
+  overflow-x: auto;
+  color: var(--fg-2);
+  margin: 0 0 2rem 0;
+}
+
+.article pre code {
+  border: 0;
+  padding: 0;
+}
+
+/* ── Data row block (technical sheet) ───────────────────────────────────── */
+
+.data-block {
+  padding: 0 var(--pad-x);
+  margin: 4rem 0;
+}
+
+.data-block__inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.data-row {
+  border-top: 1px solid var(--rule);
+  padding: 1.4rem 0 1.2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.data-row__label {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--fg-5);
+}
+
+.data-row__value {
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .data-block__inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Project list (sectioned grid) ──────────────────────────────────────── */
+
+.section {
+  padding: 0 var(--pad-x);
+  margin: 6rem 0 2rem 0;
+}
+
+.section__label {
+  font-family: var(--font-mono);
+  font-size: var(--t-base);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--fg-5);
+  padding-top: 2rem;
+  margin: 0 0 1.4rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem 2.4rem;
+}
+
+@media (max-width: 760px) {
+  .tile-grid { grid-template-columns: 1fr; }
+}
+
+.tile {
+  border-top: 1px solid var(--rule-soft);
+  padding: 0.7rem 0;
+}
+
+.tile__title {
+  font-size: var(--t-body);
+  letter-spacing: var(--ls-title);
+  color: var(--fg-1);
+}
+
+.tile__meta {
+  font-size: var(--t-micro);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--fg-5);
+  margin-top: 0.35rem;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+.footer {
+  padding: var(--pad-y) var(--pad-x);
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--fg-5);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  :root {
+    --pad-x: var(--pad-x-mobile);
+    --pad-y: var(--pad-y-mobile);
+  }
+  .article { max-width: 100%; padding-bottom: 6rem; }
+  .article p, .article ul, .article ol { font-size: var(--t-body-mobile); }
+  .header { padding: var(--pad-y-mobile) var(--pad-x-mobile); }
+  .hero { padding: 3rem var(--pad-x-mobile) 2rem; }
+}
