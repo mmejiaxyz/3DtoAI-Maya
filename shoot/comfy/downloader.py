@@ -198,10 +198,17 @@ def _download_hf(
     expected = spec.size_bytes  # may be 0 if unknown
     while thread.is_alive():
         if cancelled and cancelled():
-            # hf_hub_download has no cancel API; we raise and let the
-            # thread finish naturally (it will be daemon so it won't block exit)
-            shutil.rmtree(str(staging), ignore_errors=True)
-            raise DownloadError("Download cancelled.")
+            # hf_hub_download has no cancel API. The worker is a daemon
+            # thread, so it will keep writing until it finishes (or Maya
+            # exits). DO NOT rmtree the staging dir here — wiping it while
+            # the worker still holds open handles corrupts state on Windows
+            # and races with the worker's own writes. Leave staging on
+            # disk; the next download attempt will resume from cache.
+            raise DownloadError(
+                "Download cancelled. The HuggingFace client cannot be "
+                "interrupted mid-chunk; the background transfer will stop "
+                "on the next file boundary or when Maya exits."
+            )
 
         downloaded = _largest_file_in(staging)
         if progress_cb:
@@ -278,8 +285,18 @@ def _download_urllib(
     except urllib.error.URLError as exc:
         raise DownloadError(f"Network error: {exc.reason}") from exc
 
+    # If we asked for a range but the server replied 200 (full body),
+    # appending would corrupt the file by stitching old partial bytes
+    # to a fresh full body. Restart from scratch instead.
+    server_honored_range = resume_from > 0 and getattr(response, "status", 200) == 206
+    if resume_from > 0 and not server_honored_range:
+        resume_from = 0
+
     raw_total = response.headers.get("Content-Length") or response.headers.get("content-length")
-    total = int(raw_total) + resume_from if raw_total else 0
+    if raw_total:
+        total = int(raw_total) + resume_from  # Range responses report remaining bytes
+    else:
+        total = 0
 
     downloaded = resume_from
     chunk_size = 1 << 20  # 1 MB

@@ -12,7 +12,6 @@ import socket
 import subprocess
 import sys
 import time
-import tempfile
 import urllib.request
 from pathlib import Path
 from typing import Callable, Optional
@@ -21,6 +20,62 @@ from typing import Callable, Optional
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
+
+def _state_dir() -> Path:
+    """Per-user, non-world-writable directory for pid/log files.
+
+    Avoids the shared system temp dir, where a predictable name like
+    `shoot_comfy_8188.pid` would let another local user trick the Kill
+    button into terminating an arbitrary process owned by this user, or
+    truncate-via-symlink arbitrary files this user can write.
+    """
+    if platform.system() == "Windows":
+        base = Path(os.environ.get("LOCALAPPDATA") or (Path.home() / "AppData" / "Local"))
+    else:
+        base = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+    d = base / "Shoot"
+    d.mkdir(parents=True, exist_ok=True)
+    if platform.system() != "Windows":
+        try:
+            os.chmod(d, 0o700)
+        except OSError:
+            pass
+    return d
+
+
+def _find_listening_pid(port: int) -> Optional[int]:
+    """Return the PID currently bound to *port* on localhost, or None.
+
+    Single source of truth used both by the kill path and by the pid-file
+    verifier — if the stored pid doesn't match what's actually serving the
+    port, the stored pid is stale or tampered with and must be ignored.
+    """
+    system = platform.system()
+    try:
+        if system == "Windows":
+            output = subprocess.run(
+                ["netstat", "-ano", "-p", "TCP"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout
+            needle = f":{port} "
+            for line in output.splitlines():
+                if "LISTENING" in line and needle in line:
+                    parts = line.split()
+                    try:
+                        return int(parts[-1])
+                    except ValueError:
+                        continue
+        else:
+            output = subprocess.run(
+                ["lsof", "-tiTCP:%d" % port, "-sTCP:LISTEN"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+            if output:
+                return int(output.splitlines()[0])
+    except Exception:
+        pass
+    return None
+
 
 def _default_comfy_dir() -> Path:
     try:
@@ -39,10 +94,27 @@ def _default_comfy_dir() -> Path:
     return home / "ComfyUI"
 
 
+def _venv_python(install_dir: Path) -> Optional[str]:
+    """Return the python executable inside ComfyUI's venv, if one exists.
+
+    ComfyUI almost always lives in its own venv with a pinned torch build,
+    so launching it with a generic system python usually fails on import.
+    """
+    if platform.system() == "Windows":
+        rels = [Path("venv") / "Scripts" / "python.exe",
+                Path(".venv") / "Scripts" / "python.exe"]
+    else:
+        rels = [Path("venv") / "bin" / "python",
+                Path(".venv") / "bin" / "python"]
+    for rel in rels:
+        p = install_dir / rel
+        if p.exists():
+            return str(p)
+    return None
+
+
 def _system_python() -> str:
     """Return a usable system python executable (not mayapy)."""
-    # Prefer explicit venv inside ComfyUI if present
-    candidates = []
     system = platform.system()
     if system == "Windows":
         candidates = ["python", "python3", "py"]
@@ -100,15 +172,14 @@ class ComfyManager:
         self.host = host
         self.port = port
         self._proc: Optional[subprocess.Popen] = None
-        self._pid_file = Path(tempfile.gettempdir()) / f"shoot_comfy_{port}.pid"
+        state = _state_dir()
+        self._pid_file = state / f"comfy_{port}.pid"
         # ComfyUI prints a lot during startup (model scanning, VRAM load).
         # If stdout/stderr are PIPE and nothing reads them, the OS pipe
         # buffer (~64 KB on Windows) fills, the child blocks on write,
         # and the HTTP server never starts — `is_running()` then stays
         # False forever. Redirect to a log file instead.
-        self._log_path = (
-            Path(tempfile.gettempdir()) / f"shoot_comfy_{port}.log"
-        )
+        self._log_path = state / f"comfy_{port}.log"
         self._log_file = None  # type: Optional[object]
 
     # ------------------------------------------------------------------
@@ -145,7 +216,7 @@ class ComfyManager:
         if self.is_running(timeout=0.5):
             return
 
-        python = _system_python()
+        python = _venv_python(self.install_dir) or _system_python()
         cmd = [
             python,
             str(self.install_dir / "main.py"),
@@ -153,8 +224,21 @@ class ComfyManager:
             "--preview-method", "none",
         ]
 
-        # Truncate / re-open the log file each start.
-        self._log_file = open(self._log_path, "wb", buffering=0)
+        # Truncate / re-open the log file each start. O_NOFOLLOW on Unix
+        # prevents a pre-planted symlink in the state dir from redirecting
+        # the truncate. (No effect on Windows; the state dir there is
+        # already user-private under %LOCALAPPDATA%.)
+        log_flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        if hasattr(os, "O_NOFOLLOW"):
+            log_flags |= os.O_NOFOLLOW
+        try:
+            log_fd = os.open(str(self._log_path), log_flags, 0o600)
+        except OSError:
+            # Path is a symlink (or otherwise unsafe) — refuse and bail.
+            raise RuntimeError(
+                f"Refusing to open log file at {self._log_path}: not a regular file."
+            )
+        self._log_file = os.fdopen(log_fd, "wb", buffering=0)
 
         kwargs: dict = {
             "cwd": str(self.install_dir),
@@ -168,11 +252,25 @@ class ComfyManager:
             si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             si.wShowWindow = subprocess.SW_HIDE
             kwargs["startupinfo"] = si
-            # DETACHED_PROCESS so killing Maya doesn't take the server with it
+            # New process group so a Ctrl+C delivered to Maya's console
+            # doesn't propagate to ComfyUI. Note: this does NOT fully
+            # detach — if Maya is force-killed, the OS will usually clean
+            # up the child too. Use DETACHED_PROCESS if you want true
+            # outliving-Maya behaviour.
             kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
 
         self._proc = subprocess.Popen(cmd, **kwargs)
-        self._pid_file.write_text(str(self._proc.pid))
+        # Same NOFOLLOW guard on the pid file.
+        pid_flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        if hasattr(os, "O_NOFOLLOW"):
+            pid_flags |= os.O_NOFOLLOW
+        try:
+            pid_fd = os.open(str(self._pid_file), pid_flags, 0o600)
+            with os.fdopen(pid_fd, "w") as fh:
+                fh.write(str(self._proc.pid))
+        except OSError:
+            # Non-fatal: kill still works via port discovery.
+            pass
 
     def log_path(self) -> Path:
         """Return the log file path so the panel can offer 'open log' on errors."""
@@ -281,43 +379,37 @@ class ComfyManager:
 
     def _find_pid_on_port(self, port: int) -> Optional[int]:
         """Return the PID of the process listening on *port*, or None."""
-        system = platform.system()
-        try:
-            if system == "Windows":
-                # netstat -ano emits lines ending with the PID.
-                output = subprocess.run(
-                    ["netstat", "-ano", "-p", "TCP"],
-                    capture_output=True, text=True, timeout=5,
-                ).stdout
-                needle = f":{port} "
-                for line in output.splitlines():
-                    if "LISTENING" in line and needle in line:
-                        parts = line.split()
-                        try:
-                            return int(parts[-1])
-                        except ValueError:
-                            continue
-            else:
-                # lsof is the most portable cross-Unix option.
-                output = subprocess.run(
-                    ["lsof", "-tiTCP:%d" % port, "-sTCP:LISTEN"],
-                    capture_output=True, text=True, timeout=5,
-                ).stdout.strip()
-                if output:
-                    return int(output.splitlines()[0])
-        except Exception:
-            pass
-        return None
+        return _find_listening_pid(port)
 
     def _read_saved_pid(self) -> Optional[int]:
+        """Return the saved pid only if it is actually serving our port.
+
+        The pid file is now in a per-user dir, but cross-checking the port
+        is still the authoritative test: it rejects stale pids after a
+        crash/reboot, and prevents Kill from ever terminating a process
+        that isn't ComfyUI on this port.
+        """
         try:
-            if self._pid_file.exists():
-                return int(self._pid_file.read_text().strip())
+            if not self._pid_file.exists():
+                return None
+            saved = int(self._pid_file.read_text().strip())
         except Exception:
-            pass
+            return None
+        listening = self._find_pid_on_port(self.port)
+        if listening is not None and listening == saved:
+            return saved
         return None
 
     def _terminate_pid(self, pid: int) -> None:
+        """Terminate *pid* only if it is the process currently bound to our port.
+
+        Defence in depth: callers already pre-verify via `_read_saved_pid`
+        or `_find_pid_on_port`, but a race window exists between those
+        checks and the actual kill. Re-checking here closes it.
+        """
+        listening = self._find_pid_on_port(self.port)
+        if listening is None or listening != pid:
+            return
         if platform.system() == "Windows":
             subprocess.run(
                 ["taskkill", "/PID", str(pid), "/T", "/F"],

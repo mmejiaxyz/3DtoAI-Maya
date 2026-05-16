@@ -42,7 +42,7 @@ The compact flow uses only:
 
 - `flux-2-klein-9b-kv-fp8.safetensors`
 - `qwen_3_8b_fp8mixed.safetensors`
-- `flux2-vae.safetensors`
+- `full_encoder_small_decoder.safetensors`
 
 ## Daily flow
 

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Shoot — Maya 2026 plugin</title>
-  <meta name="description" content="Shoot — a Maya 2026 plugin that turns the active viewport into a generated still via local FLUX.2 Klein inference.">
+  <title>Shoot — Maya 2027 plugin</title>
+  <meta name="description" content="Shoot — a Maya 2027 plugin that turns the active viewport into a generated still via local FLUX.2 Klein inference.">
   <link rel="icon" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,7 @@
   <header class="header">
     <div class="header__left">
       <span>SHOOT</span>
-      <span class="header__role">&nbsp;— MAYA 2026 PLUGIN</span>
+      <span class="header__role">&nbsp;— MAYA 2027 PLUGIN</span>
     </div>
     <nav class="header__nav">
       <a href="#overview" aria-current="page">OVERVIEW</a>
@@ -28,7 +28,7 @@
     <div class="hero__label">VIEWPORT TO STILL · 2026</div>
     <h1 class="hero__title">Shoot</h1>
     <p class="hero__synopsis">
-      A small Autodesk Maya 2026 plugin that turns the active 3D viewport
+      A small Autodesk Maya 2027 plugin that turns the active 3D viewport
       into a generated still — locally, without leaving the scene. The
       plugin sits in the same window as the work and speaks to a ComfyUI
       server running on the same machine, where FLUX.2 Klein 9B Distilled
@@ -44,7 +44,7 @@
       </div>
       <div class="data-row">
         <div class="data-row__label">FORMAT</div>
-        <div class="data-row__value">MAYA 2026 PLUGIN</div>
+        <div class="data-row__value">MAYA 2027 PLUGIN</div>
       </div>
       <div class="data-row">
         <div class="data-row__label">RUNTIME</div>
@@ -102,7 +102,7 @@
       default Windows path is below; substitute your username.
     </p>
 <pre><code>git clone https://github.com/mmejiaxyz/3DtoAI-Maya.git ^
-  "%USERPROFILE%\Documents\maya\2026\modules\shoot"</code></pre>
+  "%USERPROFILE%\Documents\maya\2027\modules\shoot"</code></pre>
 
     <h3>Two — install Python dependencies into mayapy</h3>
     <p>
@@ -110,7 +110,7 @@
       Maya ships its own Python (<code>mayapy.exe</code>); install into
       that, not into the system Python.
     </p>
-<pre><code>"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe" -m pip install ^
+<pre><code>"C:\Program Files\Autodesk\Maya2027\bin\mayapy.exe" -m pip install ^
   "huggingface_hub&gt;=0.20"</code></pre>
 
     <h3>Three — install ComfyUI</h3>
@@ -212,7 +212,7 @@
       assume that arrival.
     </p>
     <p>
-      The plugin is tested on Windows 11, Maya 2026, an NVIDIA
+      The plugin is tested on Windows 11, Maya 2027, an NVIDIA
       twelve-gigabyte card. Other configurations are likely to work and
       have not been verified.
     </p>

@@ -1,12 +1,12 @@
 # Shoot
 
-Autodesk Maya 2026 plugin that sends the active viewport to a local
+Autodesk Maya 2027 plugin that sends the active viewport to a local
 ComfyUI server running FLUX.2 Klein 9B Distilled, and displays the
 generated image in a docked panel.
 
 ![Shoot — viewport-to-still example: a stylized stone character in a mossy forest](docs/screenshots/hero-forest.png)
 
-- **Maya:** 2026 (PySide6, Python 3.11)
+- **Maya:** 2027 (PySide6, Python 3.11)
 - **Backend:** ComfyUI (local, HTTP on `127.0.0.1:8188`)
 - **Model:** FLUX.2 Klein 9B Distilled FP8 + Qwen 3 8B text encoder
 - **Platform:** Windows 11, CUDA. Tested on a 12 GB GPU.
@@ -28,8 +28,8 @@ environment; the character's silhouette and material are preserved.
 
 | Component   | Version / Notes                                                    |
 |-------------|--------------------------------------------------------------------|
-| Maya        | 2026 (the plugin uses the `maya.api` 2.0 API and PySide6)          |
-| Python      | mayapy — bundled with Maya 2026 (3.11)                             |
+| Maya        | 2027 (the plugin uses the `maya.api` 2.0 API and PySide6)          |
+| Python      | mayapy — bundled with Maya 2027 (3.11)                             |
 | ComfyUI     | Any recent build with FLUX.2 nodes (`Flux2Scheduler`, `EmptyFlux2LatentImage`, `ReferenceLatent`, `CFGGuider`) |
 | Disk        | ~18 GB for the three model files                                   |
 | GPU         | NVIDIA, 12 GB VRAM minimum recommended                             |
@@ -43,7 +43,7 @@ environment; the character's silhouette and material are preserved.
 
 ```sh
 git clone https://github.com/mmejiaxyz/3DtoAI-Maya.git ^
-  "%USERPROFILE%\Documents\maya\2026\modules\shoot"
+  "%USERPROFILE%\Documents\maya\2027\modules\shoot"
 ```
 
 The repo contains a `shoot.mod` module file at the root, which adds
@@ -52,7 +52,7 @@ The repo contains a `shoot.mod` module file at the root, which adds
 ### 2. Install `huggingface_hub` into mayapy
 
 ```sh
-"C:\Program Files\Autodesk\Maya2026\bin\mayapy.exe" -m pip install ^
+"C:\Program Files\Autodesk\Maya2027\bin\mayapy.exe" -m pip install ^
   "huggingface_hub>=0.20"
 ```
 
@@ -159,7 +159,7 @@ Settings are read from environment variables first
 | Path                          | Role                                                                                          |
 |-------------------------------|-----------------------------------------------------------------------------------------------|
 | `shoot/plugin.py`             | Maya 2.0 API plugin shell. Registers `shootOpen` and a deferred-build menu item.              |
-| `shoot/capture/viewport.py`   | `snapshot_active_view()` — reads the `M3dView` back buffer via `MImage`. Falls back to a single-frame `cmds.playblast` on driver refusal. Defensive `_active_model_panel()` for Maya 2026 panel-focus quirks. |
+| `shoot/capture/viewport.py`   | `snapshot_active_view()` — reads the `M3dView` back buffer via `MImage`. Falls back to a single-frame `cmds.playblast` on driver refusal. Defensive `_active_model_panel()` for Maya 2027 panel-focus quirks. |
 | `shoot/comfy/client.py`       | REST client over `urllib`. `upload_image`, `queue_prompt`, `wait_for_image` with `/history` polling and a 30-min default timeout. No third-party HTTP deps. |
 | `shoot/comfy/manager.py`      | Lifecycle for the local ComfyUI subprocess. `start`, `start_and_wait`, `stop`, `kill`. Hides the console on Windows via `STARTUPINFO`. `kill()` falls back to PID-by-port lookup so externally-started servers can still be terminated. |
 | `shoot/comfy/workflow.py`     | `build_flux2_workflow()` returns the FLUX.2 Klein workflow as a Python dict matching the official subgraph: 19 nodes, `ConditioningZeroOut` for negative, `EmptyFlux2LatentImage`, `Flux2Scheduler`, Euler sampler, `cfg=1`, 4 steps. |
@@ -199,7 +199,7 @@ the scaled reference, so aspect follows the snap.
 
 **`cmds.loadPlugin("plugin.py")` fails with "not found on MAYA_PLUG_IN_PATH"**
 The module file `shoot.mod` must be in a directory Maya scans. Default:
-`%USERPROFILE%\Documents\maya\2026\modules\`. Restart Maya after
+`%USERPROFILE%\Documents\maya\2027\modules\`. Restart Maya after
 placing the module.
 
 **Plugin loads but UI is stale after editing files**

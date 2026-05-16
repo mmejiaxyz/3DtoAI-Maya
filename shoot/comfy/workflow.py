@@ -14,7 +14,7 @@ def build_flux2_workflow(
     steps: int = 4,
     guidance: float = 1.0,
     seed: int = -1,
-    unet_name: str = "flux-2-klein-9b-fp8.safetensors",
+    unet_name: str = "flux-2-klein-9b-kv-fp8.safetensors",
     text_encoder: str = "qwen_3_8b_fp8mixed.safetensors",
     vae_name: str = "full_encoder_small_decoder.safetensors",
 ) -> dict:

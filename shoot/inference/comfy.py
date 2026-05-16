@@ -74,7 +74,7 @@ def _assert_alive(client: ComfyClient) -> None:
 
 def _model_kwargs() -> dict:
     return dict(
-        unet_name=_settings_get("COMFY_MODEL_UNET", "flux-2-klein-9b-fp8.safetensors"),
+        unet_name=_settings_get("COMFY_MODEL_UNET", "flux-2-klein-9b-kv-fp8.safetensors"),
         text_encoder=_settings_get("COMFY_MODEL_TEXT_ENCODER", "qwen_3_8b_fp8mixed.safetensors"),
         vae_name=_settings_get("COMFY_MODEL_VAE", "full_encoder_small_decoder.safetensors"),
         steps=int(_settings_get("COMFY_STEPS", 4)),

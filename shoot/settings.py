@@ -16,7 +16,7 @@ COMFY_PORT = 8188
 
 # Model filenames — must match what you placed in ComfyUI's models/ folders.
 # Override per-machine via Maya optionVar (see SETUP.md).
-COMFY_MODEL_UNET         = "flux-2-klein-9b-fp8.safetensors"
+COMFY_MODEL_UNET         = "flux-2-klein-9b-kv-fp8.safetensors"
 COMFY_MODEL_VAE          = "full_encoder_small_decoder.safetensors"
 COMFY_MODEL_TEXT_ENCODER = "qwen_3_8b_fp8mixed.safetensors"
 
@@ -30,12 +30,17 @@ def get_setting(key: str, default: str = "") -> str:
     env = os.environ.get(env_key)
     if env:
         return env
-    
+
     try:
         from maya import cmds
         ov_key = f"shoot_{key.lower()}"
         if cmds.optionVar(exists=ov_key):
-            return str(cmds.optionVar(q=ov_key) or default)
+            # Preserve legitimate falsy values like 0 or "" — `or default`
+            # would silently swap them for the default.
+            value = cmds.optionVar(q=ov_key)
+            if value is None:
+                return default
+            return str(value)
     except Exception:
         pass
     return default

@@ -7,11 +7,11 @@ Run with the system python (or mayapy):
     python install.py --no-deps  # skip pip install
 
 What it does:
-  1. Writes ~/Library/Preferences/Autodesk/maya/2026/modules/shoot.mod
+  1. Writes ~/Library/Preferences/Autodesk/maya/2027/modules/shoot.mod
      pointing at this repo, so Maya auto-loads it on next launch.
   2. Pip-installs requirements.txt into mayapy.
 
-Tested on macOS, Maya 2026. The mod-file format is identical on all
+Tested on macOS, Maya 2027. The mod-file format is identical on all
 platforms; the install path differs.
 """
 from __future__ import annotations
@@ -98,7 +98,7 @@ def main():
         install_deps()
     print()
     print("Done. Next steps:")
-    print("  1. Launch Maya 2027.")
+    print(f"  1. Launch Maya {MAYA_VERSION}.")
     print("  2. Window > Settings/Preferences > Plug-in Manager > load `plugin.py`.")
     print("  3. Or run in the script editor:")
     print("       import maya.cmds as cmds; cmds.loadPlugin('plugin.py'); cmds.shootOpen()")

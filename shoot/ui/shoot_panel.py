@@ -469,7 +469,7 @@ class ShootPanel(QtWidgets.QWidget):
         title.setStyleSheet(
             f"color: {FG_1}; font-size: 16px; letter-spacing: 2px;"
         )
-        sub = QtWidgets.QLabel("— MAYA 2026 · VIEWPORT TO STILL")
+        sub = QtWidgets.QLabel("— MAYA 2027 · VIEWPORT TO STILL")
         sub.setProperty("role", "label")
         sub.setSizePolicy(
             QtWidgets.QSizePolicy.Ignored,
@@ -889,7 +889,7 @@ class ShootPanel(QtWidgets.QWidget):
         # mid-generation, and even if Shoot did not start the server.
         self.kill_btn.setEnabled(running)
         self._set_generation_controls_enabled(not self._busy)
-        if self.tabs.currentWidget() and self.tabs.tabText(self.tabs.currentIndex()) == "Models":
+        if self.tabs.currentWidget() and self.tabs.tabText(self.tabs.currentIndex()) == "MODELS":
             self._refresh_model_rows()
 
     def _refresh_model_rows(self) -> None:
