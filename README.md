@@ -39,44 +39,73 @@ environment; the character's silhouette and material are preserved.
 
 ## Install
 
-### 1. Clone into Maya's modules directory
+Pick one of the three paths below. All three end at the same place:
+`shoot.mod` written to Maya's modules dir, `huggingface_hub` installed
+into mayapy, and the **Shoot** panel open.
+
+### Option A — drag into Maya (easiest, no terminal)
+
+1. Download or `git clone` this repo somewhere.
+2. Launch Maya 2027.
+3. From your OS file explorer, drag **`DRAG_INTO_MAYA.py`** onto a Maya
+   viewport.
+
+That's it. The panel opens immediately and the plugin auto-loads on
+future Maya launches. On Windows, if the file was downloaded as part
+of a ZIP you may need to right-click > Properties > **Unblock** first.
+
+### Option B — one-line installer (terminal)
+
+```sh
+git clone https://github.com/mmejiaxyz/3DtoAI-Maya.git
+cd 3DtoAI-Maya
+python install.py
+```
+
+`install.py` writes the `.mod` file and installs `huggingface_hub`
+into mayapy. Then in Maya:
+
+```python
+import maya.cmds as cmds; cmds.loadPlugin("shoot"); cmds.shootOpen()
+```
+
+Flags: `--no-deps` skips the pip install, `--uninstall` removes the
+`.mod` file.
+
+### Option C — manual
+
+If you'd rather not run the installer:
 
 ```sh
 git clone https://github.com/mmejiaxyz/3DtoAI-Maya.git ^
   "%USERPROFILE%\Documents\maya\2027\modules\shoot"
-```
 
-The repo contains a `shoot.mod` module file at the root, which adds
-`shoot/` to `MAYA_PLUG_IN_PATH` and the Python path.
-
-### 2. Install `huggingface_hub` into mayapy
-
-```sh
 "C:\Program Files\Autodesk\Maya2027\bin\mayapy.exe" -m pip install ^
   "huggingface_hub>=0.20"
 ```
 
-Only needed for the in-panel model downloader. If you copy weights in
-manually, this step can be skipped.
+The repo's `shoot.mod` adds `shoot/` to `MAYA_PLUG_IN_PATH`. Load the
+plugin from the Plug-in Manager or the Script Editor as in Option B.
 
-### 3. Install ComfyUI separately
+### ComfyUI
 
-Shoot does not bundle ComfyUI. Default expected install path is
-`%USERPROFILE%\ComfyUI`; change it in the **Models** tab of the panel
-if you installed it elsewhere.
+The first time the panel opens, a **setup wizard** walks you through:
 
-### 4. Load the plugin in Maya
+1. Detecting (or installing) ComfyUI.
+2. Saving a HuggingFace read token.
+3. Downloading the three FLUX.2 weights.
 
-In the Plug-in Manager, load `shoot`. Or from the Script Editor:
+On Windows the wizard can install ComfyUI itself — it runs
+`git clone` + `python -m venv` + `pip install -r requirements.txt`
+into the path you pick, and saves it as the active `shoot_comfy_dir`.
+You need `git` and a system Python (3.10+) on PATH; if either is
+missing the wizard tells you what to install. On macOS / Linux the
+wizard skips auto-install and asks you to point it at an existing
+clone.
 
-```python
-import maya.cmds as cmds
-cmds.loadPlugin("shoot")
-cmds.shootOpen()
-```
-
-The plugin registers a `shootOpen` command and a **Shoot** menu in
-Maya's main menu bar.
+Skip any step to configure it later from the **Models** tab. The
+wizard re-runs only on first launch; reset it by clearing the
+`shoot_onboarded` Maya optionVar.
 
 ---
 

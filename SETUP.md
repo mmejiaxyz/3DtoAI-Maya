@@ -19,13 +19,17 @@ Open `http://127.0.0.1:8188` once to confirm ComfyUI starts.
 
 ## Maya plugin
 
-From this repo:
+Easiest: launch Maya 2027, then drag **`DRAG_INTO_MAYA.py`** from your
+file explorer onto the Maya viewport. The panel opens and the plugin
+auto-loads on future launches.
+
+Terminal alternative — from this repo:
 
 ```sh
 python install.py
 ```
 
-In Maya:
+Then in Maya:
 
 ```python
 import maya.cmds as cmds

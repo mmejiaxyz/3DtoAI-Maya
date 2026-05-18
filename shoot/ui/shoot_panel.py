@@ -560,6 +560,10 @@ class ShootPanel(QtWidgets.QWidget):
         self._timer.start(3000)
         self._refresh_status()
 
+        # First-launch wizard runs after the panel is painted so it parents
+        # correctly. No-op once the user has been through it.
+        QtCore.QTimer.singleShot(0, self._maybe_show_onboarding)
+
     def _build_ui(self) -> None:
         root = QtWidgets.QVBoxLayout(self)
         root.setContentsMargins(10, 10, 10, 10)
@@ -1085,6 +1089,56 @@ class ShootPanel(QtWidgets.QWidget):
             pass
         # Apply visibility/enabled state for the loaded mode.
         self._update_mode_ui()
+
+    def _maybe_show_onboarding(self) -> None:
+        try:
+            from maya import cmds
+
+            if cmds.optionVar(exists="shoot_onboarded") and cmds.optionVar(q="shoot_onboarded"):
+                return
+            # Pre-wizard users who already have Comfy + all models configured
+            # don't need to see the wizard — silently mark them onboarded.
+            from shoot.comfy.downloader import all_present
+
+            if self._manager.is_installed() and all_present(self._manager.install_dir):
+                cmds.optionVar(iv=("shoot_onboarded", 1))
+                return
+        except Exception:
+            return
+
+        try:
+            from shoot.ui.onboarding import OnboardingWizard
+        except Exception as exc:
+            print(f"[shoot.ui.shoot_panel] onboarding wizard unavailable: {exc}")
+            return
+
+        wizard = OnboardingWizard(parent=self)
+        accepted = wizard.exec_() == QtWidgets.QDialog.Accepted
+        if accepted:
+            try:
+                from maya import cmds
+
+                cmds.optionVar(iv=("shoot_onboarded", 1))
+            except Exception:
+                pass
+        self._apply_wizard_settings()
+
+    def _apply_wizard_settings(self) -> None:
+        """Pick up any optionVar changes the wizard made (comfy_dir, hf_token)
+        and reflect them in the panel widgets + manager."""
+        try:
+            from maya import cmds
+
+            if cmds.optionVar(exists="shoot_comfy_dir"):
+                path = cmds.optionVar(q="shoot_comfy_dir")
+                if path:
+                    self.comfy_path.setText(path)
+                    self._manager = ComfyManager(install_dir=Path(path).expanduser())
+            if cmds.optionVar(exists="shoot_hf_token"):
+                self.hf_token.setText(cmds.optionVar(q="shoot_hf_token"))
+        except Exception:
+            pass
+        self._refresh_status()
 
     def _save_prompt_settings(self) -> None:
         try:
