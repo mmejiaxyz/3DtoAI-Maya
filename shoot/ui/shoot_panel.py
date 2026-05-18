@@ -35,7 +35,7 @@ from shoot.inference.comfy import (
     generate,
 )
 
-SHOOT_PANEL_VERSION = "v11-multi-angle-2026-05-18"
+SHOOT_PANEL_VERSION = "v12-expand-preview-2026-05-18"
 print(f"[shoot.ui.shoot_panel] loaded {SHOOT_PANEL_VERSION}")
 
 
@@ -254,13 +254,25 @@ QFrame[role="rule"] {{
 
 
 class _ImageView(QtWidgets.QLabel):
-    def __init__(self, label: str, parent=None):
+    """A square-ish image preview that scales to fit its widget bounds.
+
+    When constructed with ``clickable=True``, emits ``expand_requested`` on
+    a left click while an image is loaded — the panel uses this to open
+    the result at full-screen scale for inspection before save.
+    """
+
+    expand_requested = QtCore.Signal()
+
+    def __init__(self, label: str, parent=None, clickable: bool = False):
         super().__init__(parent)
         self._empty_label = label.upper()
         self._pixmap: Optional[QtGui.QPixmap] = None
+        self._clickable = clickable
         self.setAlignment(QtCore.Qt.AlignCenter)
         self.setMinimumSize(320, 220)
         self.setText(self._empty_label)
+        if clickable:
+            self.setToolTip("Click to view at full size")
         self.setStyleSheet(
             "QLabel {"
             f" background: transparent;"
@@ -278,12 +290,27 @@ class _ImageView(QtWidgets.QLabel):
             raise RuntimeError("Could not display generated PNG.")
         self._pixmap = QtGui.QPixmap.fromImage(image)
         self._update_display()
+        if self._clickable:
+            self.setCursor(QtCore.Qt.PointingHandCursor)
 
     def clear_image(self) -> None:
         self._pixmap = None
         self.clear()
         self.setText(self._empty_label)
         self.setAlignment(QtCore.Qt.AlignCenter)
+        if self._clickable:
+            self.unsetCursor()
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        if (
+            self._clickable
+            and self._pixmap is not None
+            and event.button() == QtCore.Qt.LeftButton
+        ):
+            self.expand_requested.emit()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -299,6 +326,89 @@ class _ImageView(QtWidgets.QLabel):
                 QtCore.Qt.SmoothTransformation,
             )
         )
+
+    def pixmap_copy(self) -> Optional[QtGui.QPixmap]:
+        """Return the original, full-resolution pixmap (or None if empty)."""
+        return self._pixmap
+
+
+class _ImagePreviewDialog(QtWidgets.QDialog):
+    """Full-screen-ish preview of a PNG. Click or Escape dismisses it.
+
+    Used by the Shoot panel so the user can inspect the generated image
+    at native fit-to-screen scale before deciding whether to save.
+    """
+
+    def __init__(self, pixmap: QtGui.QPixmap, parent=None):
+        super().__init__(parent)
+        self.setObjectName("shootPreviewDialog")
+        self.setWindowTitle("Preview")
+        self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowCloseButtonHint)
+        self.setModal(True)
+        self.setStyleSheet(
+            f"QDialog#shootPreviewDialog {{ background: {INK}; }}"
+            f"QLabel {{ background: transparent; color: {FG_5};"
+            "  letter-spacing: 1.6px; font-size: 10px; }"
+        )
+
+        self._pixmap = pixmap
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 12)
+        layout.setSpacing(8)
+
+        self._view = QtWidgets.QLabel()
+        self._view.setAlignment(QtCore.Qt.AlignCenter)
+        self._view.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding,
+        )
+        layout.addWidget(self._view, 1)
+
+        hint = QtWidgets.QLabel(
+            f"{pixmap.width()} × {pixmap.height()} · CLICK OR ESC TO CLOSE"
+        )
+        hint.setAlignment(QtCore.Qt.AlignCenter)
+        layout.addWidget(hint)
+
+        # Size to ~90% of the available screen so window chrome + image
+        # both fit comfortably. The label scales the pixmap on every resize.
+        screen = QtGui.QGuiApplication.primaryScreen()
+        if screen is not None:
+            avail = screen.availableGeometry()
+            self.resize(int(avail.width() * 0.9), int(avail.height() * 0.9))
+        self._update_view()
+
+    def _update_view(self) -> None:
+        if self._pixmap.isNull():
+            return
+        self._view.setPixmap(
+            self._pixmap.scaled(
+                self._view.size(),
+                QtCore.Qt.KeepAspectRatio,
+                QtCore.Qt.SmoothTransformation,
+            )
+        )
+
+    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._update_view()
+
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.button() == QtCore.Qt.LeftButton:
+            self.accept()
+            return
+        super().mousePressEvent(event)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        if event.key() in (
+            QtCore.Qt.Key_Escape,
+            QtCore.Qt.Key_Return,
+            QtCore.Qt.Key_Enter,
+        ):
+            self.accept()
+            return
+        super().keyPressEvent(event)
 
 
 class _TaskSignals(QtCore.QObject):
@@ -723,13 +833,14 @@ class ShootPanel(QtWidgets.QWidget):
         self.reference_view = _ImageView("Snap the viewport to begin")
         previews.addWidget(self.reference_view, 1)
 
-        result_label = QtWidgets.QLabel("RESULT")
+        result_label = QtWidgets.QLabel("RESULT  ·  CLICK TO EXPAND")
         result_label.setProperty("role", "sublabel")
         previews.addWidget(result_label)
         result_rule = QtWidgets.QFrame()
         result_rule.setProperty("role", "rule")
         previews.addWidget(result_rule)
-        self.result_view = _ImageView("Generated image appears here")
+        self.result_view = _ImageView("Generated image appears here", clickable=True)
+        self.result_view.expand_requested.connect(self._show_result_fullsize)
         previews.addWidget(self.result_view, 1)
 
     def _build_models_tab(self) -> None:
@@ -1304,6 +1415,19 @@ class ShootPanel(QtWidgets.QWidget):
         self._set_busy(False)
         self._cancel_generation = False
         self._refresh_status()
+
+    def _show_result_fullsize(self) -> None:
+        """Open the current result image at fit-to-screen scale.
+
+        Triggered by left-clicking the RESULT preview thumbnail. The
+        dialog dismisses on click or Escape. Snap is intentionally not
+        clickable — the user can re-snap in one click.
+        """
+        pixmap = self.result_view.pixmap_copy()
+        if pixmap is None or pixmap.isNull():
+            return
+        dialog = _ImagePreviewDialog(pixmap, parent=self)
+        dialog.exec_()
 
     def _save_result(self) -> None:
         if not self._last_result:
