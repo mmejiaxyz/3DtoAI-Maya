@@ -99,9 +99,9 @@ def main():
     print()
     print("Done. Next steps:")
     print(f"  1. Launch Maya {MAYA_VERSION}.")
-    print("  2. Window > Settings/Preferences > Plug-in Manager > load `plugin.py`.")
+    print("  2. Window > Settings/Preferences > Plug-in Manager > load `shoot`.")
     print("  3. Or run in the script editor:")
-    print("       import maya.cmds as cmds; cmds.loadPlugin('plugin.py'); cmds.shootOpen()")
+    print("       import maya.cmds as cmds; cmds.loadPlugin('shoot'); cmds.shootOpen()")
 
 
 if __name__ == "__main__":

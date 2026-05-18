@@ -29,7 +29,7 @@ In Maya:
 
 ```python
 import maya.cmds as cmds
-cmds.loadPlugin("plugin.py")
+cmds.loadPlugin("shoot")
 cmds.shootOpen()
 ```
 

@@ -67,11 +67,11 @@ if you installed it elsewhere.
 
 ### 4. Load the plugin in Maya
 
-In the Plug-in Manager, load `plugin.py`. Or from the Script Editor:
+In the Plug-in Manager, load `shoot`. Or from the Script Editor:
 
 ```python
 import maya.cmds as cmds
-cmds.loadPlugin("plugin.py")
+cmds.loadPlugin("shoot")
 cmds.shootOpen()
 ```
 
@@ -158,7 +158,7 @@ Settings are read from environment variables first
 
 | Path                          | Role                                                                                          |
 |-------------------------------|-----------------------------------------------------------------------------------------------|
-| `shoot/plugin.py`             | Maya 2.0 API plugin shell. Registers `shootOpen` and a deferred-build menu item.              |
+| `shoot/shoot.py`              | Maya 2.0 API plugin shell. Registers `shootOpen` and a deferred-build menu item. The Plug-in Manager lists it as **shoot**. |
 | `shoot/capture/viewport.py`   | `snapshot_active_view()` — reads the `M3dView` back buffer via `MImage`. Falls back to a single-frame `cmds.playblast` on driver refusal. Defensive `_active_model_panel()` for Maya 2027 panel-focus quirks. |
 | `shoot/comfy/client.py`       | REST client over `urllib`. `upload_image`, `queue_prompt`, `wait_for_image` with `/history` polling and a 30-min default timeout. No third-party HTTP deps. |
 | `shoot/comfy/manager.py`      | Lifecycle for the local ComfyUI subprocess. `start`, `start_and_wait`, `stop`, `kill`. Hides the console on Windows via `STARTUPINFO`. `kill()` falls back to PID-by-port lookup so externally-started servers can still be terminated. |
@@ -197,7 +197,7 @@ the scaled reference, so aspect follows the snap.
 
 ## Troubleshooting
 
-**`cmds.loadPlugin("plugin.py")` fails with "not found on MAYA_PLUG_IN_PATH"**
+**`cmds.loadPlugin("shoot")` fails with "not found on MAYA_PLUG_IN_PATH"**
 The module file `shoot.mod` must be in a directory Maya scans. Default:
 `%USERPROFILE%\Documents\maya\2027\modules\`. Restart Maya after
 placing the module.
@@ -210,9 +210,9 @@ import sys, maya.cmds as cmds
 for name in list(sys.modules):
     if name.startswith("shoot"):
         del sys.modules[name]
-if cmds.pluginInfo("plugin", q=True, loaded=True):
-    cmds.unloadPlugin("plugin")
-cmds.loadPlugin("plugin")
+if cmds.pluginInfo("shoot", q=True, loaded=True):
+    cmds.unloadPlugin("shoot")
+cmds.loadPlugin("shoot")
 cmds.shootOpen()
 ```
 

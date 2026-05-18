@@ -1,6 +1,7 @@
 """Maya plugin entry for Shoot.
 
-Loaded by Maya via `loadPlugin "shoot/plugin.py"`. Registers:
+Loaded by Maya via `loadPlugin "shoot"` (or `shoot.py`). The Plug-in
+Manager lists it as "shoot". Registers:
   - A command `shootOpen` that opens the dockable shoot panel.
   - A "Shoot" menu in Maya's main window.
 """
