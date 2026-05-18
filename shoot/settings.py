@@ -20,6 +20,22 @@ COMFY_MODEL_UNET         = "flux-2-klein-9b-kv-fp8.safetensors"
 COMFY_MODEL_VAE          = "full_encoder_small_decoder.safetensors"
 COMFY_MODEL_TEXT_ENCODER = "qwen_3_8b_fp8mixed.safetensors"
 
+# FLUX.2 dev (high-quality mode)
+COMFY_MODEL_FLUX2_DEV_UNET   = "flux2_dev_fp8mixed.safetensors"
+COMFY_MODEL_FLUX2_DEV_CLIP   = "mistral_3_small_flux2_bf16.safetensors"
+COMFY_MODEL_FLUX2_TURBO_LORA = "Flux_2-Turbo-LoRA_comfyui.safetensors"
+COMFY_FLUX2_DEV_STEPS_TURBO  = 8
+COMFY_FLUX2_DEV_STEPS_FULL   = 20
+COMFY_FLUX2_DEV_GUIDANCE     = 4.0
+
+# Qwen multi-angle (camera-driven mode)
+COMFY_MODEL_QWEN_EDIT_UNET       = "qwen_image_edit_2509_fp8_e4m3fn.safetensors"
+COMFY_MODEL_QWEN_CLIP            = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+COMFY_MODEL_QWEN_VAE             = "qwen_image_vae.safetensors"
+COMFY_MODEL_QWEN_MULTIANGLE_LORA = "Qwen-Edit-2509-Multiple-angles.safetensors"
+COMFY_MODEL_QWEN_LIGHTNING_LORA  = "Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors"
+COMFY_QWEN_STEPS                 = 4
+
 # Generation defaults
 COMFY_STEPS = 4  # Distilled Klein runs in 4 steps
 

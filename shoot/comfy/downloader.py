@@ -49,12 +49,16 @@ class ModelSpec:
         return comfy_dir / self.subfolder / self.filename
 
 
-# Canonical model list for the compact viewport snapshot -> image edit flow.
-# Canny/ControlNet files from older builds are intentionally omitted.
-# FLUX.2 Klein 9B KV is the only image model the panel needs.
-# UNet is gated: accept the license at
-#   huggingface.co/black-forest-labs/FLUX.2-klein-9b-kv-fp8
-# then paste your HF token into the Models tab before downloading.
+# Canonical model lists.
+#
+#  • MODELS               — required for the default Klein flow (auto-DL).
+#  • MODELS_FLUX2_DEV     — for the Flux 2 dev mode (high-quality alternate).
+#  • MODELS_MULTIANGLE    — for the Qwen multi-angle mode (camera-driven).
+#
+# All are exposed via MODELS_ALL in the Models tab — the panel groups them
+# but they share the same presence-check + download code paths. HF repo
+# IDs are best-effort; if a repo path drifts, override the filename via
+# the SHOOT_COMFY_MODEL_* env vars, or drop the file in manually.
 MODELS: list[ModelSpec] = [
     ModelSpec(
         key="unet",
@@ -91,7 +95,108 @@ MODELS: list[ModelSpec] = [
     ),
 ]
 
-MODELS_BY_KEY: dict[str, ModelSpec] = {m.key: m for m in MODELS}
+
+# ── FLUX.2 dev (high-quality mode) ─────────────────────────────────────────────
+# Shares the FLUX.2 Klein VAE; only the UNet, CLIP, and Turbo LoRA are new.
+MODELS_FLUX2_DEV: list[ModelSpec] = [
+    ModelSpec(
+        key="flux2_dev_unet",
+        display_name="FLUX.2 dev FP8 mixed  (UNet, ~12 GB)  ⚠ BFL license",
+        filename="flux2_dev_fp8mixed.safetensors",
+        subfolder="models/diffusion_models",
+        url="",
+        size_bytes=12_000_000_000,
+        gated=True,
+        hf_repo_id="Comfy-Org/FLUX.2-dev_ComfyUI",
+        hf_file="split_files/diffusion_models/flux2_dev_fp8mixed.safetensors",
+    ),
+    ModelSpec(
+        key="flux2_dev_clip",
+        display_name="Mistral 3 Small (FLUX.2 dev CLIP, bf16, ~12 GB)",
+        filename="mistral_3_small_flux2_bf16.safetensors",
+        subfolder="models/text_encoders",
+        url="",
+        size_bytes=12_000_000_000,
+        gated=False,
+        hf_repo_id="Comfy-Org/FLUX.2-dev_ComfyUI",
+        hf_file="split_files/text_encoders/mistral_3_small_flux2_bf16.safetensors",
+    ),
+    ModelSpec(
+        key="flux2_turbo_lora",
+        display_name="FLUX.2 Turbo LoRA (8 steps, ~600 MB)",
+        filename="Flux_2-Turbo-LoRA_comfyui.safetensors",
+        subfolder="models/loras",
+        url="",
+        size_bytes=600_000_000,
+        gated=False,
+        hf_repo_id="Comfy-Org/FLUX.2-dev_ComfyUI",
+        hf_file="split_files/loras/Flux_2-Turbo-LoRA_comfyui.safetensors",
+    ),
+]
+
+
+# ── Qwen multi-angle (camera-driven mode) ─────────────────────────────────────
+MODELS_MULTIANGLE: list[ModelSpec] = [
+    ModelSpec(
+        key="qwen_edit_unet",
+        display_name="Qwen-Image-Edit 2509 FP8 e4m3fn  (UNet, ~10 GB)",
+        filename="qwen_image_edit_2509_fp8_e4m3fn.safetensors",
+        subfolder="models/diffusion_models",
+        url="",
+        size_bytes=10_000_000_000,
+        gated=False,
+        hf_repo_id="Comfy-Org/Qwen-Image-Edit_ComfyUI",
+        hf_file="split_files/diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors",
+    ),
+    ModelSpec(
+        key="qwen_clip",
+        display_name="Qwen 2.5-VL 7B FP8 scaled  (CLIP, ~8 GB)",
+        filename="qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        subfolder="models/text_encoders",
+        url="",
+        size_bytes=8_000_000_000,
+        gated=False,
+        hf_repo_id="Comfy-Org/Qwen-Image_ComfyUI",
+        hf_file="split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+    ),
+    ModelSpec(
+        key="qwen_vae",
+        display_name="Qwen Image VAE  (~250 MB)",
+        filename="qwen_image_vae.safetensors",
+        subfolder="models/vae",
+        url="",
+        size_bytes=250_000_000,
+        gated=False,
+        hf_repo_id="Comfy-Org/Qwen-Image_ComfyUI",
+        hf_file="split_files/vae/qwen_image_vae.safetensors",
+    ),
+    ModelSpec(
+        key="qwen_lightning_lora",
+        display_name="Qwen-Edit 2509 Lightning 4-step LoRA  (~700 MB)",
+        filename="Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors",
+        subfolder="models/loras",
+        url="",
+        size_bytes=700_000_000,
+        gated=False,
+        hf_repo_id="lightx2v/Qwen-Image-Edit-2509-Lightning",
+        hf_file="Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors",
+    ),
+    ModelSpec(
+        key="qwen_multiangle_lora",
+        display_name="Qwen-Edit 2509 Multiple-Angles LoRA  (~700 MB)",
+        filename="Qwen-Edit-2509-Multiple-angles.safetensors",
+        subfolder="models/loras",
+        url="",
+        size_bytes=700_000_000,
+        gated=False,
+        hf_repo_id="dx8152/Qwen-Edit-2509-Multiple-angles",
+        hf_file="Qwen-Edit-2509-Multiple-angles.safetensors",
+    ),
+]
+
+
+MODELS_ALL: list[ModelSpec] = MODELS + MODELS_FLUX2_DEV + MODELS_MULTIANGLE
+MODELS_BY_KEY: dict[str, ModelSpec] = {m.key: m for m in MODELS_ALL}
 
 
 # ── Status check ──────────────────────────────────────────────────────────────
